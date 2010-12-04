@@ -28,6 +28,10 @@ C10T_MAPS_PATH=/var/www/maps/c10t
 MCOVERVIEWER_PATH=$MC_PATH/Minecraft-Overviewer
 MCOVERVIEWER_MAPS_PATH=/var/www/maps/overviewer
 
+#Cartographer
+CARTO_PATH=$MC_PATH/carto
+CARTO_MAPS_PATH=/var/www/minecraftMaps
+
 LOG_TDIR=/var/www/logs
 LOGS_DAYS=7
 
@@ -355,6 +359,48 @@ then
          else
             echo "The path to Minecraft-Overviewer seems to be wrong."
       fi;;
+
+	#################################################################
+	"cartography")
+
+		if [ -e $CARTO_PATH ]	
+		then
+			if [ -e $MC_PATH/$WORLD_NAME ]
+			then
+				if [ $ONLINE -eq 1 ]
+				then
+					echo "Issuing save-all command, wait 5s...";
+					screen -S $SCREEN_NAME -p 0 -X stuff "`printf "save-all\r"`"; sleep 5
+					echo "Issuing save-off command...";
+					screen -S $SCREEN_NAME -p 0 -X stuff "`printf "save-off\r"`"; sleep 1
+					screen -S $SCREEN_NAME -p 0 -X stuff "`printf "say Map cartography has begun.\r"`"
+				fi
+				
+				mkdir -p $CARTO_MAPS_PATH
+
+				DATE=$(date +%d-%m-%Y-%Hh%M)
+				FILENAME=$WORLD_NAME-map-$DATE
+				cd $CARTO_PATH
+				echo "Cartography in progress..."
+				./c10t -w $MC_PATH/$WORLD_NAME/ -o $FILENAME.png -q -s
+				mv *.png $CARTO_MAPS_PATH
+				cd $MC_PATH
+				echo "Cartography is done."
+
+				if [ $ONLINE -eq 1 ]
+				then
+					echo "Issuing save-on command..."
+					screen -S $SCREEN_NAME -p 0 -X stuff "`printf "save-on\r"`"; sleep 1
+					screen -S $SCREEN_NAME -p 0 -X stuff "`printf "say Map cartography is done.\r"`"
+				fi
+
+			else
+				echo "The world \"$WORLD_NAME\" does not exist.";
+			fi
+		else
+			echo "The path to cartographier seems to be wrong."
+		fi;;
+
       
       #################################################################
       "update")
@@ -407,7 +453,7 @@ then
       
       #################################################################
       *)
-         echo "Usage : minecraft <status | start [force] | stop | restart [warn] | logs [clean] | backup [clean] | c10t | overviewer | update>";
+         echo "Usage : minecraft <status | start [force] | stop | restart [warn] | logs [clean] | backup [clean] | c10t | overviewer | cartography | update>";
    esac
    
 else
